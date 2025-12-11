@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "299868857742",
+    "project_id": "kilifirebase-b54f1",
+    "storage_bucket": "kilifirebase-b54f1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:299868857742:android:cb83bacf6021e953bd70df",
+        "android_client_info": {
+          "package_name": "com.casey.caseymobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDnOATpRQQM2TVVtXouyeVT_tVWGtNjdFU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
