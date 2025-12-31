@@ -13,7 +13,7 @@ class Girisyapekran extends StatefulWidget {
 
 class _GirisyapekranState extends State<Girisyapekran> {
   final formKey = GlobalKey<FormState>();
-  final UserService userService = UserService();
+  final UserService userService = UserService();//firestore yazma
 
   final fullnameController = TextEditingController();
   final emailController = TextEditingController();
@@ -23,7 +23,7 @@ class _GirisyapekranState extends State<Girisyapekran> {
   bool isLogin = true;
   String? errorMessage;
 
-  final auth = Auth();
+  final auth = Auth();//firebase auth işlemleri için
 
   void showMessage(String message, bool isError) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -39,17 +39,16 @@ class _GirisyapekranState extends State<Girisyapekran> {
         emailController.text.isEmpty ||
         passwordController.text.isEmpty ||
         passwordRepeatController.text.isEmpty) {
-      showMessage("Please fill all fields!", true);
+      showMessage("Lütfen tüm alanları doldurun!", true);
       return;
     }
 
     if (passwordController.text != passwordRepeatController.text) {
-      showMessage("Passwords do not match!", true);
+      showMessage("Şifreler uyuşmuyor!", true);
       return;
     }
 
     try {
-      /// Firebase Authentication'da kullanıcı oluştur
       UserCredential credential = await auth.kullaniciEkle(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
@@ -63,15 +62,14 @@ class _GirisyapekranState extends State<Girisyapekran> {
         email: emailController.text.trim(),
       );
 
-      /// Firestore’a tek seferde yazıyoruz (çift yazma yok!)
       await userService.kullaniciEkleDb(newUser);
 
       if (!mounted) return;
       setState(() => isLogin = true);
 
-      showMessage("Sign up successful!", false);
+      showMessage("Kayıt Başarılı!", false);
     } on FirebaseAuthException catch (e) {
-      showMessage(e.message ?? "Sign up failed!", true);
+      showMessage(e.message ?? "Kayıt Başarısız!", true);
     }
   }
 
@@ -82,18 +80,19 @@ class _GirisyapekranState extends State<Girisyapekran> {
         password: passwordController.text.trim(),
       );
 
-      if (!mounted) return;
+      if (!mounted) return;//kullanıcı sayfadan ayrılırsa hata gelmesin diye
 
-      showMessage("Sign in successful!", false);
+      showMessage("Giriş Başarılı!", false);
 
-      Navigator.pushReplacementNamed(context, "/KarsilamaEkrani"); // ⭐⭐
+      Navigator.pushReplacementNamed(context, "/KarsilamaEkrani");//geri basınca logine gitmemek icin stackten login sayfasını cıkarttık
+
     } on FirebaseAuthException catch (e) {
       setState(() => errorMessage = e.message);
-      showMessage("Sign in failed", true);
+      showMessage("Giriş Başarısız", true);
     }
   }
 
-  InputDecoration customInputDecoration(String hint) {
+  InputDecoration customInputDecoration(String hint) {//tekrar olmasın diye inputdecoration
     return InputDecoration(
       hintText: hint,
       filled: true,
@@ -110,7 +109,7 @@ class _GirisyapekranState extends State<Girisyapekran> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 243, 219, 251),
-      body: SafeArea(
+      body: SafeArea(//tasmayı engelledim
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -126,7 +125,7 @@ class _GirisyapekranState extends State<Girisyapekran> {
                 const SizedBox(height: 120),
 
                 Text(
-                  isLogin ? "Welcome To Casey" : "Create Account",
+                  isLogin ? "Casey'e Hoş Geldin" : "Hesap Oluştur",
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 28,
@@ -140,7 +139,7 @@ class _GirisyapekranState extends State<Girisyapekran> {
                 if (!isLogin) ...[
                   TextField(
                     controller: fullnameController,
-                    decoration: customInputDecoration("Name & Surname"),
+                    decoration: customInputDecoration("Ad & Soyad"),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -154,7 +153,7 @@ class _GirisyapekranState extends State<Girisyapekran> {
                 TextField(
                   controller: passwordController,
                   obscureText: true,
-                  decoration: customInputDecoration("Password"),
+                  decoration: customInputDecoration("Şifre"),
                 ),
                 const SizedBox(height: 16),
 
@@ -162,7 +161,7 @@ class _GirisyapekranState extends State<Girisyapekran> {
                   TextField(
                     controller: passwordRepeatController,
                     obscureText: true,
-                    decoration: customInputDecoration("Repeat Password"),
+                    decoration: customInputDecoration("Şifre Tekrarı"),
                   ),
                   const SizedBox(height: 12),
                 ],
@@ -204,7 +203,7 @@ class _GirisyapekranState extends State<Girisyapekran> {
                     ),
                     child: Center(
                       child: Text(
-                        isLogin ? "Sign In" : "Sign Up",
+                        isLogin ? "Giriş Yap" : "Kayıt Ol",
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -217,12 +216,12 @@ class _GirisyapekranState extends State<Girisyapekran> {
 
                 const SizedBox(height: 18),
 
-                GestureDetector(
+                GestureDetector(//tıklanabilir hale geldi
                   onTap: () => setState(() => isLogin = !isLogin),
                   child: Text(
                     isLogin
-                        ? "Don't have an account? Sign Up."
-                        : "Already have an account? Sign In.",
+                        ? "Hesabın yok mu? Kayıt ol."
+                        : "Zaten hesabın var mı? Giriş Yap.",
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Color(0xFF6A0DAD),
@@ -231,7 +230,6 @@ class _GirisyapekranState extends State<Girisyapekran> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 20),
               ],
             ),

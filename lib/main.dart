@@ -7,19 +7,18 @@ import 'firebase_options.dart';
 import 'package:caseymobile/girisyap_uyeol.dart';
 import 'package:camera/camera.dart';
 import 'package:caseymobile/kullanicibilgiekrani.dart';
-import 'package:caseymobile/deneme.dart';
 import 'package:caseymobile/urunekle.dart';
 import 'package:caseymobile/favorilerim.dart';
+import 'package:caseymobile/sepetim.dart';
 import 'kilifekran.dart';
 
 late List<CameraDescription> cameras;
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();//firebase baslatma vb icin
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  printModelInfo();
   cameras = await availableCameras();
 
   runApp(const MyApp());
@@ -44,18 +43,20 @@ class MyApp extends StatelessWidget {
         '/KarsilamaEkrani': (context) => const KarsilamaEkrani(),
         '/KullaniciBilgileri': (context) => const KullaniciBilgileri(),
         '/SiparislerimEkran': (context) => const SiparislerimEkran(),
+        '/SepetimEkran': (context) => const SepetimEkran(),
+
       },
 
       home: StreamBuilder(
-        stream: authService.authStateChanges,
+        stream: authService.authStateChanges,//giris cıkıs durumu takip
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
+              body: Center(child: CircularProgressIndicator()),//yükleniyo
             );
           }
 
-          if (snapshot.hasData) {
+          if (snapshot.hasData) {//giris varsa
             return const KarsilamaEkrani();
           } else {
             return const Girisyapekran();

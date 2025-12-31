@@ -1,3 +1,4 @@
+import 'package:caseymobile/sepetim.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +16,7 @@ class _KilifEkraniState extends State<KilifEkrani> {
   Set<String> favoriteIds = {};
 
   @override
-  void initState() {
+  void initState() {//favorileri basta cekmek icin
     super.initState();
     loadFavorites();
   }
@@ -71,10 +72,12 @@ class _KilifEkraniState extends State<KilifEkrani> {
       });
     } else {
       await cartRef.set({
+        "productId": productId,
         "name": productData["name"],
         "price": productData["price"],
         "imageUrl": productData["imageUrl"],
         "quantity": 1,
+        "addedAt": FieldValue.serverTimestamp(),
       });
     }
   }
@@ -85,15 +88,68 @@ class _KilifEkraniState extends State<KilifEkrani> {
     final String model = ModalRoute.of(context)!.settings.arguments as String;
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      extendBodyBehindAppBar: true,//transparanlık appbara kadar uzandı(estetik acıdan)
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(
-          "$model için kılıflar",
-          style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
-        ),
-        centerTitle: true,
+        title: Text("$model için kılıflar"),
+        actions: [
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection("users")
+                .doc(_auth.currentUser!.uid)
+                .collection("cart")
+                .snapshots(),
+            builder: (context, snapshot) {
+              int itemCount = 0;
+
+              if (snapshot.hasData) {
+                for (final doc in snapshot.data!.docs) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  itemCount += (data["quantity"] ?? 1) as int;
+                }
+              }
+
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.shopping_cart, color: Colors.white),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SepetimEkran()),
+                      );
+                    },
+                  ),
+
+                  if (itemCount > 0)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                        child: Text(
+                          itemCount > 99 ? "99+" : itemCount.toString(),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
       ),
 
       body: Container(
@@ -210,7 +266,6 @@ class _KilifEkraniState extends State<KilifEkrani> {
 
                       const SizedBox(height: 6),
 
-                      // 💰 Fiyat Badge
                       Container(
                         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 14),
                         decoration: BoxDecoration(
@@ -229,7 +284,6 @@ class _KilifEkraniState extends State<KilifEkrani> {
 
                       const SizedBox(height: 8),
 
-                      // 🛒 SEPTE EKLE BUTONU
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: SizedBox(

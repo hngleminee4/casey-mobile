@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'dart:math';
 import 'package:camera/camera.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -17,16 +16,20 @@ class Kameraekran extends StatefulWidget {
 class _KameraekranState extends State<Kameraekran> {
   CameraController? _controller;
   String? detectedModel;
-  final YoloService _yoloService = YoloService();
+  final YoloService _yoloService = YoloService();//tflite modeli yüklendi
 
   bool _isReady = false;
+  int _frameCount = 0;//kacıncı framede
   bool _isDetecting = false;
+  int _detectEvery = 5;//her 5 framede bi detect
+  bool _navigated = false;//bir kere bulunca tekrar sayfa açmaz
+  bool _isStreaming = false;
+  bool _cameraClosed = false;
 
   final int _inputW = 640;
   final int _inputH = 640;
 
   List<List<double>> detections = [];
-  List<List<double>> _smoothDetections = [];
 
   @override
   void initState() {
@@ -34,7 +37,7 @@ class _KameraekranState extends State<Kameraekran> {
     _loadModelAndCamera();
   }
 
-  Future<void> _loadModelAndCamera() async {
+  Future<void> _loadModelAndCamera() async {//model yüklenip kamera acılıyo
     await _yoloService.loadModel();
     await _initCamera();
   }
@@ -49,71 +52,69 @@ class _KameraekranState extends State<Kameraekran> {
 
       await _controller!.initialize();
 
-      _controller!.startImageStream((CameraImage image) async {
-        if (_isDetecting) return;
-
-        _isDetecting = true;
-        await _processFrame(image);
-        _isDetecting = false;
-      });
-
       if (!mounted) return;
       setState(() => _isReady = true);
+
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (_isStreaming) return;
+        _isStreaming = true;
+        _controller!.startImageStream(_onFrame);
+      });
+
     } catch (e) {
-      debugPrint("❌ KAMERA HATASI: $e");
+      debugPrint("KAMERA HATASI: $e");
     }
   }
 
+  void _onFrame(CameraImage image) async {
+    _frameCount++;
+    if (_frameCount % _detectEvery != 0) return;
+    if (_isDetecting) return;
+    _isDetecting = true;
+    await _processFrame(image);
+    _isDetecting = false;
+  }
   Future<void> _processFrame(CameraImage image) async {
     try {
       final Float32List input = _convertImage(image);
 
-      final rawDetections = _yoloService.runDirect(
-        input,
-        _inputH,
-        _inputW,
-      );
+      final rawDetections = _yoloService.runDirect(input, _inputH, _inputW);
 
       if (!mounted) return;
 
-      setState(() {
-        detections = rawDetections;
+      if (rawDetections.isNotEmpty) {
+        setState(() => detections = rawDetections);
+      }
 
-        if (detections.isNotEmpty) {
-          // En yüksek güven skorlu olanı seç
-          detections.sort((a, b) => b[4].compareTo(a[4]));
-          final best = detections.first;
+      if (rawDetections.isNotEmpty) {
+        rawDetections.sort((a, b) => b[4].compareTo(a[4]));
+        final best = rawDetections.first;
 
-          final classIndex = best[5].toInt();
-          detectedModel = yoloClasses[classIndex];
+        final classIndex = best[5].toInt();
+        detectedModel = yoloClasses[classIndex];
 
+        debugPrint("ALGILANAN MODEL: $detectedModel");
+      } else {
+        detectedModel = null;
+      }
 
-          debugPrint("📱 ALGILANAN MODEL: $detectedModel");
-        }
-      });
-      bool _navigated = false;
       if (detectedModel != null && !_navigated) {
         _navigated = true;
 
-        _controller?.stopImageStream(); // Kamera akışını durdur
-        _controller?.dispose();
+        await _controller?.stopImageStream();
+        if (!mounted) return;
 
-        if (mounted) {
-          Navigator.pushReplacementNamed(
-            context,
-            '/kiliflar',
-            arguments: detectedModel,
-          );
-        }
+        Navigator.pushReplacementNamed(
+          context,
+          '/kiliflar',
+          arguments: detectedModel,
+        );
       }
 
-
-      debugPrint("✅ CANLI DETECTION: ${detections.length}");
     } catch (e) {
-      debugPrint("❌ YOLO FRAME HATASI: $e");
+      debugPrint("YOLO FRAME HATASI: $e");
     }
   }
-
 
   Float32List _convertImage(CameraImage image) {
     final img.Image rgb = img.Image(
@@ -121,7 +122,7 @@ class _KameraekranState extends State<Kameraekran> {
       height: image.height,
     );
 
-    final Plane yPlane = image.planes[0];
+    final Plane yPlane = image.planes[0];//görüntüde yuvlerin pixellerini tutar
     final Plane uPlane = image.planes[1];
     final Plane vPlane = image.planes[2];
 
@@ -146,12 +147,8 @@ class _KameraekranState extends State<Kameraekran> {
       }
     }
 
-    // ✅ ANDROID 90 DERECE DÖNÜK GELİR → DÜZELT
-    final img.Image rotated = img.copyRotate(rgb, angle: 90);
-
-    // ✅ MODELE UYUMLU 640x640
     final img.Image resized =
-    img.copyResize(rotated, width: _inputW, height: _inputH);
+    img.copyResize(rgb, width: _inputW, height: _inputH);
 
     final Uint8List bytes =
     Uint8List.fromList(resized.getBytes(order: img.ChannelOrder.rgb));
@@ -187,8 +184,9 @@ class _KameraekranState extends State<Kameraekran> {
           ),
         ],
       ),
-      body: _isReady && _controller != null
-          ? Stack(
+      body: (!_isReady || _controller == null || _cameraClosed)
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
         children: [
           Positioned.fill(child: CameraPreview(_controller!)),
           Positioned.fill(
@@ -197,14 +195,11 @@ class _KameraekranState extends State<Kameraekran> {
             ),
           ),
         ],
-      )
-          : const Center(child: CircularProgressIndicator()),
+      ),
     );
   }
 }
 
-// ---------------------------------------------------
-// ✅ YoloPainter SINIFI – BUNU KESİNLİKLE TUTMAN LAZIM
 class YoloPainter extends CustomPainter {
   final List<List<double>> detections;
   final int inputW;
@@ -255,5 +250,8 @@ class YoloPainter extends CustomPainter {
 
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant YoloPainter oldDelegate) {
+    return oldDelegate.detections != detections;
+  }
+
 }

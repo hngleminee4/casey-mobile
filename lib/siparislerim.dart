@@ -11,7 +11,7 @@ class SiparislerimEkran extends StatelessWidget {
 
     if (user == null) {
       return const Scaffold(
-        body: Center(child: Text("Giriş yapılmamış.")),
+        body: Center(child: Text("Giriş yapılmamış")),
       );
     }
 
@@ -22,144 +22,136 @@ class SiparislerimEkran extends StatelessWidget {
         centerTitle: true,
       ),
 
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFC3A7F3), Color(0xFFE9D7FF)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection("siparisler")
+            .where("userId", isEqualTo: user.uid)
+            .orderBy("tarih", descending: true)
+            .snapshots(),
 
-        child: StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection("users")
-              .doc(user.uid)
-              .collection("orders")
-              .orderBy("date", descending: true)
-              .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return const Center(child: CircularProgressIndicator());
-            }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(
+              child: Text(
+                "Henüz siparişiniz yok",
+                style: TextStyle(fontSize: 18),
+              ),
+            );
+          }
 
-            final orders = snapshot.data!.docs;
+          final orders = snapshot.data!.docs;
 
-            if (orders.isEmpty) {
-              return const Center(
-                child: Text(
-                  "Henüz siparişiniz yok",
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: orders.length,
+
+            itemBuilder: (context, index) {
+              final data = orders[index].data() as Map<String, dynamic>;
+              final List urunler = data["urunler"];
+              final Timestamp tarih = data["tarih"];
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 8,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
                 ),
-              );
-            }
 
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: orders.length,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
 
-              itemBuilder: (context, index) {
-                final orderData = orders[index].data() as Map<String, dynamic>;
-                final items = orderData["items"] as List<dynamic>;
-                final date = (orderData["date"] as Timestamp).toDate();
-                final totalPrice = orderData["totalPrice"];
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black,
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
+                    Text(
+                      "${tarih.toDate().day}/${tarih.toDate().month}/${tarih.toDate().year} "
+                          "- ${tarih.toDate().hour}:${tarih.toDate().minute.toString().padLeft(2, '0')}",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.purple,
                       ),
-                    ],
-                  ),
+                    ),
 
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Tarih
-                      Text(
-                        "${date.day}/${date.month}/${date.year} - ${date.hour}:${date.minute.toString().padLeft(2, '0')}",
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.purple,
-                        ),
-                      ),
+                    const SizedBox(height: 8),
 
-                      const SizedBox(height: 8),
-
-                      // Sipariş Kalemleri
-                      Column(
-                        children: items.map((item) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: Row(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Image.network(
-                                    item["imageUrl"],
-                                    width: 50,
-                                    height: 50,
-                                    fit: BoxFit.cover,
-                                  ),
+                    Column(
+                      children: urunler.map((item) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.network(
+                                  item["imageUrl"],
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    item["name"],
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  "x${item["quantity"]}",
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  "${item["price"]} ₺",
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  item["name"],
                                   style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
+                              ),
+                              Text("x${item["quantity"]}"),
+                              const SizedBox(width: 8),
+                              Text(
+                                "${item["price"]} ₺",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
 
-                      const SizedBox(height: 12),
+                    const Divider(height: 24),
 
-                      // Toplam fiyat
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          "Toplam: $totalPrice ₺",
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Durum: ${data["durum"]}",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.green,
+                          ),
+                        ),
+                        Text(
+                          "Toplam: ${data["toplamTutar"].toStringAsFixed(2)} ₺",
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF5A2EA6),
+                            color: Colors.purple,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

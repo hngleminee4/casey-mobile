@@ -29,12 +29,12 @@ class FavorilerimEkran extends StatelessWidget {
           ),
         ),
 
-        child: StreamBuilder<QuerySnapshot>(
+        child: StreamBuilder<QuerySnapshot>(//gercek zamanlı veri alıyorum
           stream: FirebaseFirestore.instance
               .collection("users")
               .doc(user.uid)
               .collection("favorites")
-              .snapshots(),
+              .snapshots(),//firestoredaki her değişiklikte arayüzüm yenileniyo.cunku bu sayfada favoriye ekleyip cıkarıcam
 
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
@@ -56,9 +56,9 @@ class FavorilerimEkran extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                childAspectRatio: 0.65,
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
+                childAspectRatio: 0.58,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
               ),
               itemCount: docs.length,
 
@@ -73,7 +73,7 @@ class FavorilerimEkran extends StatelessWidget {
                     borderRadius: BorderRadius.circular(18),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black,
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -83,7 +83,7 @@ class FavorilerimEkran extends StatelessWidget {
                   child: Column(
                     children: [
                       Expanded(
-                        child: Stack(
+                        child: Stack(//kalbi resmin üstüne koyacagımız icin
                           children: [
                             ClipRRect(
                               borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
@@ -94,7 +94,6 @@ class FavorilerimEkran extends StatelessWidget {
                               ),
                             ),
 
-                            // ❤️ Favoriden Kaldır Butonu
                             Positioned(
                               right: 8,
                               top: 8,
@@ -123,6 +122,36 @@ class FavorilerimEkran extends StatelessWidget {
                       ),
 
                       const SizedBox(height: 8),
+
+                      ElevatedButton(
+                        onPressed: () async {
+                          final cartRef = FirebaseFirestore.instance
+                              .collection("users")
+                              .doc(user.uid)
+                              .collection("cart")
+                              .doc(productId);
+
+                          final cartDoc = await cartRef.get();
+
+                          if (cartDoc.exists) {
+                            await cartRef.update({
+                              "quantity": FieldValue.increment(1),//urun varsa adedini 1 arttır
+                            });
+                          } else {
+                            await cartRef.set({
+                              "name": data["name"],
+                              "imageUrl": data["imageUrl"],
+                              "price": (data["price"] as num),
+                              "quantity": 1,
+                            });
+                          }
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Ürün sepete eklendi")),
+                          );
+                        },
+                        child: const Text("Sepete Ekle"),
+                      ),
 
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8),

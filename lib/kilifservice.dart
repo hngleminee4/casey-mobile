@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class ProductService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // Marka tespiti
   String detectBrand(String model) {
     final m = model.toLowerCase();
 
@@ -20,7 +19,6 @@ class ProductService {
     return "unknown";
   }
 
-  // Ürün ekleme
   Future<void> addCaseProduct({
     required String model,
     required String name,
@@ -31,7 +29,7 @@ class ProductService {
 
     await _db.collection("products").add({
       "brand": brand,
-      "model": [model],  // arrayContains için
+      "model": [model],
       "name": name,
       "price": price,
       "imageUrl": imageUrl,

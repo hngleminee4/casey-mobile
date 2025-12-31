@@ -2,7 +2,7 @@ import 'package:caseymobile/firestorebaglan.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-/// Kullanıcı kayıt işlemleri için
+/// kullanıcı kayıt işlemleri için servisim
 class UserService {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
@@ -20,7 +20,7 @@ class UserService {
 
 }
 
-/// Ürünler, sepet ve favoriler için service
+/// ürünler, sepet ve favoriler için servis
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
@@ -32,7 +32,6 @@ class FirestoreService {
         .snapshots();
   }
 
-  // Sepete ekleme
   Future<void> addToCart({
     required String uid,
     required String productId,
@@ -45,7 +44,7 @@ class FirestoreService {
         .collection('users')
         .doc(uid)
         .collection('cart')
-        .doc(productId); // doc id = productId
+        .doc(productId);
 
     await cartRef.set({
       'productId': productId,
@@ -54,7 +53,7 @@ class FirestoreService {
       'imageUrl': imageUrl,
       'name': name,
       'createdAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    }, SetOptions(merge: true));//verileri birlestiriyo @override mantıgı
   }
 
   Stream<bool> isFavorite({
@@ -70,7 +69,7 @@ class FirestoreService {
         .map((doc) => doc.exists);
   }
 
-  // Favori aç/kapa
+  // favori butonunu aktifleşmesi ve pasifleşmesinde
   Future<void> toggleFavorite({
     required String uid,
     required String productId,
@@ -84,7 +83,7 @@ class FirestoreService {
     final doc = await favRef.get();
 
     if (doc.exists) {
-      await favRef.delete(); // varsa sil → favoriden çıkar
+      await favRef.delete(); // varsa siler favoriden çıkar
     } else {
       await favRef.set({
         'productId': productId,

@@ -73,7 +73,7 @@ class _KarsilamaEkraniState extends State<KarsilamaEkrani> {
                     return;
                   }
 
-                  await user.updatePassword(newPass);
+                  await user.updatePassword(newPass);//hata olursa exception gelir
                   if (context.mounted) Navigator.pop(context);
 
                   _showMessage("Şifre başarıyla güncellendi.", false);
@@ -105,9 +105,11 @@ class _KarsilamaEkraniState extends State<KarsilamaEkrani> {
                 Navigator.pushNamed(context, '/UrunEkle');
               } else if (value == "favs") {
                 Navigator.pushNamed(context, '/FavorilerimEkran');
+              } else if (value == "sepets") {
+                Navigator.pushNamed(context, "/SepetimEkran");
               } else if (value == "orders") {
                 Navigator.pushNamed(context, "/SiparislerimEkran");
-              } else if (value == "info") {
+              }else if (value == "info") {
                 Navigator.pushNamed(context, "/KullaniciBilgileri");
               } else if (value == "password") {
                 _showChangePasswordDialog();
@@ -141,9 +143,16 @@ class _KarsilamaEkraniState extends State<KarsilamaEkrani> {
                   ),
                 ),
                 const PopupMenuItem(
-                  value: "orders",
+                  value: "sepets",
                   child: ListTile(
                     leading: Icon(Icons.shopping_bag),
+                    title: Text("Sepetim"),
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: "orders",
+                  child: ListTile(
+                    leading: Icon(Icons.check_box),
                     title: Text("Siparişlerim"),
                   ),
                 ),
@@ -169,7 +178,6 @@ class _KarsilamaEkraniState extends State<KarsilamaEkrani> {
                   ),
                 ),
               ]);
-
               return items;
             },
           ),

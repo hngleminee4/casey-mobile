@@ -62,12 +62,12 @@ List<double> _toCorners(List<double> box, int inputW, int inputH) {
   final h = box[3] * inputH;
 
   return [
-    cx - w / 2, // x1
-    cy - h / 2, // y1
-    cx + w / 2, // x2
-    cy + h / 2, // y2
-    box[4],     // score (5. index)
-    box[5],     // class_index (6. index)
+    cx - w / 2,
+    cy - h / 2,
+    cx + w / 2,
+    cy + h / 2,
+    box[4],
+    box[5],
   ];
 }
 
@@ -86,16 +86,13 @@ double _iou(List<double> a, List<double> b) {
   return interArea / (areaA + areaB - interArea + 1e-6);
 }
 
-// NMS (Non-Maximum Suppression)
 List<List<double>> _nonMaxSuppression(List<List<double>> boxes, double iouThreshold) {
-  // 4. index'teki skora göre azalan sırala
   boxes.sort((a, b) => b[4].compareTo(a[4]));
   List<List<double>> selected = [];
 
   while (boxes.isNotEmpty) {
     final current = boxes.removeAt(0);
     selected.add(current);
-    // Intersection Over Union (IoU) eşiği aşan kutuları kaldır
     boxes.removeWhere((b) => _iou(current, b) > iouThreshold);
   }
 
@@ -112,11 +109,11 @@ class YoloService {
         ..threads = 4,
     );
 
-    debugPrint("✅ YOLO Model Yüklendi");
-    debugPrint("✅ INPUT SHAPE : ${_interpreter
+    debugPrint("YOLO Model Yüklendi");
+    debugPrint("INPUT SHAPE : ${_interpreter
         .getInputTensor(0)
         .shape}");
-    debugPrint("✅ OUTPUT SHAPE: ${_interpreter
+    debugPrint("OUTPUT SHAPE: ${_interpreter
         .getOutputTensor(0)
         .shape}");
   }
@@ -167,9 +164,6 @@ class YoloService {
     return _nonMaxSuppression(cornerBoxes, 0.45);
   }
 
-
-
-  /// ✅ ISOLATE ÜZERİNDEN YOLO ÇALIŞTIR VE KUTULARI İŞLE
   Future<List<List<double>>> runOnIsolate(Float32List input,
       int inputH,
       int inputW,) async {
@@ -178,8 +172,8 @@ class YoloService {
       "input": input,
       "inputH": inputH,
       "inputW": inputW,
-      "conf_threshold": 0.45, // Güven eşiği
-      "iou_threshold": 0.45, // NMS eşiği
+      "conf_threshold": 0.45, // güven eşiği
+      "iou_threshold": 0.45,//iki kutunun kesisim oranı.bu eşikten büyükse algılananı atıyo
     });
 
     return response;
@@ -200,8 +194,8 @@ class YoloService {
     final inputTensor = input.reshape([1, inputH, inputW, 3]);
 
     final outputShape = interpreter.getOutputTensor(0).shape;
-    final int c = outputShape[1]; // ✅ 54
-    final int n = outputShape[2]; // ✅ 8400
+    final int c = outputShape[1];
+    final int n = outputShape[2];
 
     final output = List.generate(
       1,
@@ -210,7 +204,6 @@ class YoloService {
 
     interpreter.run(inputTensor, output);
 
-    // ✅ [8400, 54] formatına çevir
     final rawDetections = List.generate(
       n,
           (i) => List.generate(c, (j) => output[0][j][i]),
@@ -218,7 +211,6 @@ class YoloService {
 
     List<List<double>> boxes = [];
 
-    /// ✅ OBJECTNESS YOK → SINIFLAR 4. INDEXTEN BAŞLAR
     for (var d in rawDetections) {
       final double cx = d[0];
       final double cy = d[1];
@@ -228,7 +220,6 @@ class YoloService {
       double bestScore = 0;
       int bestClass = -1;
 
-      // ✅ SINIFLAR: d[4] → d[53]
       for (int i = 4; i < c; i++) {
         if (d[i] > bestScore) {
           bestScore = d[i];
@@ -240,7 +231,6 @@ class YoloService {
 
       final String label = yoloClasses[bestClass];
 
-      /// ✅ SADECE TELEFON MARKALARI KALSIN
       if (!label.toLowerCase().contains("iphone") &&
           !label.toLowerCase().contains("samsung") &&
           !label.toLowerCase().contains("redmi") &&

@@ -6,7 +6,6 @@ class Auth {
   User? get currentUser => _firebaseAuth.currentUser;
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 
-  // KAYIT
   Future<UserCredential> kullaniciEkle({
     required String email,
     required String password,
@@ -17,7 +16,6 @@ class Auth {
     );
   }
 
-  // GİRİŞ
   Future<UserCredential> girisYap({
     required String email,
     required String password,
@@ -28,7 +26,6 @@ class Auth {
     );
   }
 
-  // ÇIKIŞ
   Future<void> cikisYap() async {
     await _firebaseAuth.signOut();
   }

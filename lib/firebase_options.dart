@@ -1,7 +1,7 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
-
+//uygulamanın calıstıgı platforma göre ayar dosyası.platforma göre baslamak için
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -17,7 +17,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.windows:
         return windows;
       case TargetPlatform.linux:
-        throw UnsupportedError(
+        throw UnsupportedError(//linux için config olmadıgından hata
           'DefaultFirebaseOptions have not been configured for linux - '
           'you can reconfigure this by running the FlutterFire CLI again.',
         );
@@ -29,13 +29,13 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCF0TzJrFtcq5iIg7r-5DJb0ifoaqM6rEo',
-    appId: '1:299868857742:web:31689c2e35a324fcbd70df',
-    messagingSenderId: '299868857742',
-    projectId: 'kilifirebase-b54f1',
+    apiKey: 'AIzaSyCF0TzJrFtcq5iIg7r-5DJb0ifoaqM6rEo',//Firebase erişim anahtarı
+    appId: '1:299868857742:web:31689c2e35a324fcbd70df',//uygulamanın ozgunlugu id
+    messagingSenderId: '299868857742',//firebasenin bildirim gönderme yetkisini gösterir
+    projectId: 'kilifirebase-b54f1',//projenin adı
     authDomain: 'kilifirebase-b54f1.firebaseapp.com',
-    storageBucket: 'kilifirebase-b54f1.firebasestorage.app',
-    measurementId: 'G-TXYZBWRSV8',
+    storageBucket: 'kilifirebase-b54f1.firebasestorage.app',//storage bilgileri
+    measurementId: 'G-TXYZBWRSV8',//kullanıcı etkilesimlerinin google analytics tarafından ölcülmesi
   );
 
   static const FirebaseOptions android = FirebaseOptions(
